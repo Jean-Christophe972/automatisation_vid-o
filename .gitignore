@@ -1,0 +1,26 @@
+# Secrets : jamais dans le repo
+.env
+.env.*
+!.env.example
+*.pem
+cookies*.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Node
+node_modules/
+
+# Médias générés
+*.mp4
+*.mov
+*.wav
+*.mp3
+out/
+renders/
+tmp/

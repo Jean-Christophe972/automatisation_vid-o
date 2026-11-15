@@ -1,0 +1,19 @@
+# Sources autorisées pour le compte B (clips).
+# Règle : une vidéo n'est téléchargée QUE si son URL commence par un des "channels" d'une campagne active.
+# Ajouter une campagne = s'y inscrire d'abord sur Whop/Vyro, puis l'ajouter ici (via une PR).
+#
+# Champs :
+#   id               identifiant court et unique
+#   platform         whop | vyro
+#   rate_per_1k_usd  taux payé pour 1 000 vues (pour prioriser)
+#   channels         URLs des chaînes ou dossiers de contenu fournis par la campagne
+#   active           false pour suspendre sans supprimer
+
+campaigns: []
+  # Exemple (à remplacer par les vraies URLs fournies dans la campagne) :
+  # - id: cod-mw4-fr
+  #   platform: whop
+  #   rate_per_1k_usd: 3.0
+  #   channels:
+  #     - https://www.youtube.com/@ExempleChaineAutorisee
+  #   active: true
