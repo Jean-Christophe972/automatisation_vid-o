@@ -2,7 +2,7 @@
 
 Production automatisée de vidéos courtes pour deux comptes (TikTok + YouTube Shorts), avec validation humaine avant chaque publication. Voir `CLAUDE.md` pour l'architecture et les règles.
 
-## État (v0.1)
+## État (v0.2)
 
 | Brique | État |
 | --- | --- |
@@ -11,14 +11,14 @@ Production automatisée de vidéos courtes pour deux comptes (TikTok + YouTube S
 | Liste blanche des sources (`config/sources_whitelist.yaml`) | fait, testé |
 | Schéma du storyboard stickman (`packages/schemas/storyboard.json`) | fait |
 | Clipper (fork OpenShorts) | à faire |
-| Bot Telegram de validation | à faire |
+| Bot Telegram de validation (`/start`, `/test`, boutons Publier / Jeter) | fait, testé (stockage en mémoire, Postgres à venir) |
 | Publisher YouTube / TikTok | à faire |
 | Rendu stickman (Remotion) + voix Gemini TTS | à faire |
 
 ## Déploiement Railway
 
 1. Dans Railway, relier le service à ce repo (Settings → Source).
-2. Variables du service : au minimum `GEMINI_API_KEY` (liste complète dans `.env.example`).
+2. Variables du service : au minimum `GEMINI_API_KEY`, puis `TELEGRAM_BOT_TOKEN` et `TELEGRAM_CHAT_ID` pour la validation (liste complète dans `.env.example`). Le webhook Telegram s'enregistre tout seul au démarrage grâce au domaine public Railway.
 3. Chaque push sur `main` redéploie. Railway vérifie `/health` avant de basculer.
 
 `/health` renvoie `ready_for_jobs: false` tant qu'une variable obligatoire manque. Aucune valeur secrète n'est jamais renvoyée.
