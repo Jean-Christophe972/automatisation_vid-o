@@ -139,6 +139,21 @@ def pose_angles(pose: str, t: float) -> dict:
         a.update(fa=(4, 0), ba=(-4, 0), lean=10, bob=bob / 2, mood="sad")
     elif pose == "shrug":
         a.update(fa=(45, -105), ba=(-45, 105), mood="neutral")
+    elif pose == "dance":
+        s3 = math.sin(2 * math.pi * 2.0 * t)
+        a.update(fa=(150 + 25 * s3, -30), ba=(-60 + 40 * s3, 70), fl=(18 * s3, 10), bl=(-18 * s3, 10),
+                 lean=7 * s3, lift=abs(s3) * 12, mood="happy")
+    elif pose == "talk":
+        g = math.sin(2 * math.pi * 1.3 * t)
+        a.update(fa=(55 + 20 * g, 40 + 25 * g), ba=(-10, 15), mood="talk" if math.sin(2 * math.pi * 4 * t) > 0
+                 else "neutral")
+        a["tilt"] = 4 * g
+    elif pose == "surprised":
+        j = max(0.0, math.sin(2 * math.pi * 0.9 * t)) ** 3
+        a.update(fa=(150, 20), ba=(-150, -20), lift=18 * j, lean=-6, mood="scared")
+    elif pose == "angry":
+        a.update(fa=(40, 100), ba=(-40, -100), dx=2.0 * math.sin(2 * math.pi * 5 * t), lean=6, mood="angry")
+        a["stomp"] = True
     return a
 
 
@@ -148,10 +163,15 @@ def _seg(p, ang, length):
 
 
 def draw_stickman(d: ImageDraw.ImageDraw, cx: float, pose: str, t: float, facing: str, color: tuple,
-                  accessory: str, theme: dict, scale: float = 1.32) -> tuple[float, float]:
-    """Dessine un personnage ; renvoie la position du haut de la tête (pour la bulle)."""
+                  accessory: str, theme: dict, scale: float = 1.32, shadow: bool = False) -> tuple[float, float]:
+    """Dessine un personnage ; renvoie la position du haut de la tête (pour la bulle).
+    `shadow` : ombre portée au sol (décors IA), `d` doit alors être un ImageDraw en mode RGBA."""
     a = pose_angles(pose, t)
     k = SS * scale
+    if shadow:
+        sw = (46 - min(30.0, a["lift"] * 0.4)) * k
+        sx = (cx + a["dx"]) * SS
+        d.ellipse([sx - sw, (GROUND - 7) * SS, sx + sw, (GROUND + 9) * SS], fill=(0, 0, 0, 70))
     sign = 1 if facing != "left" else -1
     lw = max(2, int(10 * k))
     ink = theme["ink"]
@@ -208,6 +228,14 @@ def draw_stickman(d: ImageDraw.ImageDraw, cx: float, pose: str, t: float, facing
         d.arc([mx - 10 * k, my, mx + 10 * k, my + 14 * k], 200, 340, fill=ink, width=max(2, int(4 * k)))
     elif mood == "scared":
         d.ellipse([mx - 6 * k, my - 4 * k, mx + 6 * k, my + 9 * k], outline=ink, width=max(2, int(4 * k)))
+    elif mood == "talk":
+        d.ellipse([mx - 7 * k, my - 2 * k, mx + 7 * k, my + 8 * k], fill=ink)
+    elif mood == "angry":
+        for dx, sgn in ((-8, 1), (8, -1)):
+            ax = ex + dx * k
+            d.line([ax - 7 * k, hy - 18 * k - sgn * 4 * k, ax + 7 * k, hy - 18 * k + sgn * 4 * k], fill=ink,
+                   width=max(2, int(4 * k)))
+        d.arc([mx - 10 * k, my, mx + 10 * k, my + 14 * k], 200, 340, fill=ink, width=max(2, int(4 * k)))
     else:
         d.line([mx - 8 * k, my + 3 * k, mx + 8 * k, my + 3 * k], fill=ink, width=max(2, int(4 * k)))
     # accessoires de tête
@@ -439,8 +467,35 @@ def scenes_with_outro(sb: dict) -> list[dict]:
     return list(sb["scenes"]) + [outro]
 
 
+def load_decor(path: Path) -> Image.Image:
+    """Charge un décor IA et le recadre en plein écran (2x)."""
+    with Image.open(path) as im:
+        im = im.convert("RGB")
+        tw, th = W * SS, H * SS
+        r = max(tw / im.width, th / im.height)
+        im = im.resize((max(tw, round(im.width * r)), max(th, round(im.height * r))), Image.LANCZOS)
+        x0, y0 = (im.width - tw) // 2, (im.height - th) // 2
+        return im.crop((x0, y0, x0 + tw, y0 + th))
+
+
+def actor_x(actor: dict, t: float, dur: float) -> tuple[float, str]:
+    """Position et orientation d'un personnage à l'instant t (déplacement x -> to_x si demandé)."""
+    x0 = actor["x"]
+    facing = actor.get("facing", "right")
+    if "to_x" in actor and abs(actor["to_x"] - x0) > 0.02:
+        p = min(1.0, t / max(0.1, dur * 0.85))
+        p = p * p * (3 - 2 * p)                     # départ et arrivée en douceur
+        return x0 + (actor["to_x"] - x0) * p, ("right" if actor["to_x"] > x0 else "left")
+    if actor["pose"] in ("walk", "run"):
+        speed = 0.04 if actor["pose"] == "walk" else 0.09
+        direction = -1 if facing == "left" else 1
+        return min(0.9, max(0.1, x0 + direction * speed * (t / max(dur, 0.1) - 0.5) * 2)), facing
+    return x0, facing
+
+
 def render_video(sb: dict, audios: list[SceneAudio], out: Path, workdir: Path,
-                 min_total: float = 61.5) -> Path:
+                 min_total: float = 61.5, decors: dict[int, Path] | None = None) -> Path:
+    decors = decors or {}
     scenes = scenes_with_outro(sb)
     if len(scenes) != len(audios):
         raise RenderError(f"{len(scenes)} scènes mais {len(audios)} pistes audio")
@@ -464,9 +519,19 @@ def render_video(sb: dict, audios: list[SceneAudio], out: Path, workdir: Path,
     try:
         for si, (scene, audio, gap) in enumerate(zip(scenes, audios, gaps)):
             dur = audio.duration + gap + (END_HOLD_S if si == len(scenes) - 1 else 0)
-            theme = DARK if scene["background"] == "night_sky" else LIGHT
-            static = Image.new("RGB", (W * SS, H * SS), theme["bg"])
-            draw_background(static, scene["background"], theme)
+            decor = None
+            if si in decors:
+                try:
+                    decor = load_decor(decors[si])
+                except OSError:
+                    decor = None
+            if decor is not None:
+                theme = LIGHT
+                static = decor
+            else:
+                theme = DARK if scene["background"] == "night_sky" else LIGHT
+                static = Image.new("RGB", (W * SS, H * SS), theme["bg"])
+                draw_background(static, scene["background"], theme)
             if si == 0:
                 draw_label(static, sb["hook"], 150, big=True)
                 cap_y = 385
@@ -481,7 +546,7 @@ def render_video(sb: dict, audios: list[SceneAudio], out: Path, workdir: Path,
             for fi in range(n_frames):
                 t = fi / FPS
                 frame = static.copy()
-                d = ImageDraw.Draw(frame)
+                d = ImageDraw.Draw(frame, "RGBA")
                 pop = min(1.0, t / 0.35)
                 for pi, prop in enumerate(scene.get("props") or []):
                     px, py = PROP_SLOTS[pi % len(PROP_SLOTS)]
@@ -490,13 +555,10 @@ def render_video(sb: dict, audios: list[SceneAudio], out: Path, workdir: Path,
                 heads = []
                 for ai, actor in enumerate(scene["actors"]):
                     ch = chars.get(actor["character"], sb["characters"][0])
-                    x = actor["x"]
-                    if actor["pose"] in ("walk", "run"):
-                        speed = 0.04 if actor["pose"] == "walk" else 0.09
-                        direction = -1 if actor.get("facing") == "left" else 1
-                        x = min(0.9, max(0.1, x + direction * speed * (t / max(dur, 0.1) - 0.5) * 2))
-                    hx, hy = draw_stickman(d, x * W, actor["pose"], t + ai * 0.37, actor.get("facing", "right"),
-                                           _hex(ch["color"]), ch.get("accessory", "none"), theme)
+                    x, facing = actor_x(actor, t, dur)
+                    hx, hy = draw_stickman(d, x * W, actor["pose"], t + ai * 0.37, facing,
+                                           _hex(ch["color"]), ch.get("accessory", "none"), theme,
+                                           shadow=decor is not None)
                     if actor.get("bubble") and t > 0.4:
                         heads.append((actor["bubble"], hx, hy))
                 for text, hx, hy in heads:
@@ -504,10 +566,12 @@ def render_video(sb: dict, audios: list[SceneAudio], out: Path, workdir: Path,
                 active = next((c for c in chunks if c[0].start <= t < c[-1].end + 0.15), None)
                 if active:
                     draw_caption(d, active, t, cap_y)
-                # léger « punch » de zoom au début de chaque scène
-                z = 1 + 0.05 * (1 - _ease(min(1.0, t / 0.3)))
+                # « punch » de zoom à l'entrée de la scène, puis zoom lent et léger panoramique
+                progress = t / max(dur, 0.1)
+                z = 1 + 0.05 * (1 - _ease(min(1.0, t / 0.3))) + 0.035 * progress
                 cw, ch_ = W * SS / z, H * SS / z
-                box = ((W * SS - cw) / 2, (H * SS - ch_) / 2, (W * SS + cw) / 2, (H * SS + ch_) / 2)
+                pan = (1 if si % 2 == 0 else -1) * (W * SS - cw) / 2 * 0.6 * progress
+                box = ((W * SS - cw) / 2 + pan, (H * SS - ch_) / 2, (W * SS + cw) / 2 + pan, (H * SS + ch_) / 2)
                 small = frame.resize((W, H), Image.LANCZOS, box=box)
                 proc.stdin.write(small.tobytes())
         proc.stdin.close()

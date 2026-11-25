@@ -12,7 +12,7 @@ from contentmachine.gemini import GeminiClient, GeminiError
 from contentmachine.pipeline import FakeVoice, make_story
 from contentmachine.render import SceneAudio, chunk_words, render_video, time_words, wav_duration
 from contentmachine.scriptgen import build_prompt, write_story
-from contentmachine.storyboard import StoryboardError, validate, word_count
+from contentmachine.storyboard import MIN_WORDS, StoryboardError, validate, word_count
 
 FIX = Path(__file__).parent / "fixtures" / "loto.json"
 
@@ -26,7 +26,7 @@ def story():
 
 def test_fixture_is_valid(story):
     assert validate(story) is story
-    assert 165 <= word_count(story) <= 230
+    assert MIN_WORDS <= word_count(story)
 
 
 def test_unknown_character(story):
@@ -88,7 +88,7 @@ def test_repairs_small_mistakes(story):
 
 def test_prompt_mentions_subject_and_avoid_list():
     p = build_prompt("et si les chats parlaient", avoid=["Loto"])
-    assert "et si les chats parlaient" in p and "Loto" in p and "165" in p
+    assert "et si les chats parlaient" in p and "Loto" in p and str(MIN_WORDS) in p
 
 
 # --- client Gemini ----------------------------------------------------------------

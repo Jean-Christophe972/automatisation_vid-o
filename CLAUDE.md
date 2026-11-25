@@ -29,7 +29,9 @@ Sources : campagnes gaming (Call of Duty FR d'abord, GTA 6 dès ouverture) — t
 Décision (25/11) : rendu en Python/Pillow dans l'orchestrateur plutôt que Remotion (une seule image Docker,
 rendu testable en CI, pas de navigateur headless). Code : contentmachine/{scriptgen,gemini,render,pipeline}.py.
 Étapes : sujet -> scénario Gemini (storyboard JSON validé par packages/schemas/storyboard.json, relance avec
-les erreurs) -> voix Gemini TTS par scène -> rendu stickman animé, sous-titres calés sur la durée de chaque voix
+les erreurs) -> voix Gemini TTS par scène (débit ajusté x0,92-1,22 pour tenir 61-90 s) -> décors IA fal FLUX schnell
+(une scène = une phrase, champ "decor", repli sur décor dessiné en code) -> stickmen animés par notre moteur
+par-dessus (déplacements to_x, 16 poses), sous-titres calés sur la durée de chaque voix
 -> contrôle qualité profil "story" (61-90 s) -> validation Telegram (/histoire [sujet]).
 
 ## Publisher

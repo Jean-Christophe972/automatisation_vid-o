@@ -4,60 +4,230 @@
   "title": "Storyboard d'une vidéo stickman « Et si demain… »",
   "description": "Produit par le LLM, validé avant rendu. La durée de chaque scène est fixée par la voix off, pas par le LLM.",
   "type": "object",
-  "required": ["story_id", "title", "language", "hook", "characters", "scenes", "outro"],
+  "required": [
+    "story_id",
+    "title",
+    "language",
+    "hook",
+    "characters",
+    "scenes",
+    "outro"
+  ],
   "additionalProperties": false,
   "properties": {
-    "story_id": {"type": "string", "pattern": "^[a-z0-9-]{3,64}$"},
-    "title": {"type": "string", "minLength": 5, "maxLength": 80, "description": "Titre court (légende, Telegram)"},
-    "part": {"type": "integer", "minimum": 1, "maximum": 3},
-    "parts_total": {"type": "integer", "minimum": 1, "maximum": 3},
-    "language": {"enum": ["fr", "en"]},
-    "hook": {"type": "string", "minLength": 10, "maxLength": 90, "description": "Question d'accroche, affichée en grand pendant la première scène"},
+    "story_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]{3,64}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 80,
+      "description": "Titre court (légende, Telegram)"
+    },
+    "part": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3
+    },
+    "parts_total": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3
+    },
+    "language": {
+      "enum": [
+        "fr",
+        "en"
+      ]
+    },
+    "hook": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 90,
+      "description": "Question d'accroche, affichée en grand pendant la première scène"
+    },
     "characters": {
-      "type": "array", "minItems": 1, "maxItems": 3,
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
       "items": {
         "type": "object",
-        "required": ["id", "name", "color"],
+        "required": [
+          "id",
+          "name",
+          "color"
+        ],
         "additionalProperties": false,
         "properties": {
-          "id": {"type": "string", "pattern": "^[a-z0-9_]{1,32}$"},
-          "name": {"type": "string", "maxLength": 30},
-          "color": {"type": "string", "pattern": "^#[0-9a-fA-F]{6}$"},
-          "accessory": {"enum": ["none", "cap", "glasses", "hat", "tie", "crown"]}
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]{1,32}$"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "accessory": {
+            "enum": [
+              "none",
+              "cap",
+              "glasses",
+              "hat",
+              "tie",
+              "crown"
+            ]
+          }
         }
       }
     },
     "scenes": {
-      "type": "array", "minItems": 4, "maxItems": 12,
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 16,
       "items": {
         "type": "object",
-        "required": ["id", "background", "narration", "actors"],
+        "required": [
+          "id",
+          "background",
+          "narration",
+          "actors"
+        ],
         "additionalProperties": false,
         "properties": {
-          "id": {"type": "integer", "minimum": 1},
-          "label": {"type": "string", "maxLength": 24, "description": "Étiquette d'étape : « JOUR 1 », « 1 AN APRÈS »"},
-          "background": {"enum": ["room", "street", "office", "night_sky", "house_exterior", "city", "nature", "plain"]},
-          "narration": {"type": "string", "minLength": 10, "maxLength": 320},
+          "id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 24,
+            "description": "Étiquette d'étape : « JOUR 1 », « 1 AN APRÈS »"
+          },
+          "background": {
+            "enum": [
+              "room",
+              "street",
+              "office",
+              "night_sky",
+              "house_exterior",
+              "city",
+              "nature",
+              "plain"
+            ]
+          },
+          "decor": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 300,
+            "description": "Décor de la scène décrit en anglais pour le générateur d'images (lieu, objets, ambiance), sans personnage ni texte"
+          },
+          "narration": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 320
+          },
           "actors": {
-            "type": "array", "minItems": 1, "maxItems": 3,
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
             "items": {
               "type": "object",
-              "required": ["character", "pose", "x"],
+              "required": [
+                "character",
+                "pose",
+                "x"
+              ],
               "additionalProperties": false,
               "properties": {
-                "character": {"type": "string"},
-                "pose": {"enum": ["stand", "walk", "run", "point", "sit", "jump", "scared", "think", "wave", "celebrate", "sad", "shrug"]},
-                "x": {"type": "number", "minimum": 0.1, "maximum": 0.9, "description": "Position horizontale (0 = gauche, 1 = droite)"},
-                "facing": {"enum": ["left", "right"]},
-                "bubble": {"type": "string", "maxLength": 40}
+                "character": {
+                  "type": "string"
+                },
+                "pose": {
+                  "enum": [
+                    "stand",
+                    "walk",
+                    "run",
+                    "point",
+                    "sit",
+                    "jump",
+                    "scared",
+                    "think",
+                    "wave",
+                    "celebrate",
+                    "sad",
+                    "shrug",
+                    "dance",
+                    "talk",
+                    "surprised",
+                    "angry"
+                  ]
+                },
+                "x": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 0.9,
+                  "description": "Position horizontale (0 = gauche, 1 = droite)"
+                },
+                "to_x": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 0.9,
+                  "description": "Si présent, le personnage se déplace de x vers to_x pendant la scène"
+                },
+                "facing": {
+                  "enum": [
+                    "left",
+                    "right"
+                  ]
+                },
+                "bubble": {
+                  "type": "string",
+                  "maxLength": 40
+                }
               }
             }
           },
-          "props": {"type": "array", "maxItems": 3, "items": {"enum": ["money", "house", "car", "phone", "clock", "globe", "heart", "trophy", "question", "lightning", "tree", "door"]}}
+          "props": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "enum": [
+                "money",
+                "house",
+                "car",
+                "phone",
+                "clock",
+                "globe",
+                "heart",
+                "trophy",
+                "question",
+                "lightning",
+                "tree",
+                "door"
+              ]
+            }
+          }
         }
       }
     },
-    "outro": {"type": "string", "minLength": 10, "maxLength": 120, "description": "Question finale lue et affichée, qui pousse à commenter"},
-    "hashtags": {"type": "array", "maxItems": 6, "items": {"type": "string", "pattern": "^#[^\\s#]{2,30}$"}}
+    "outro": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 120,
+      "description": "Question finale lue et affichée, qui pousse à commenter"
+    },
+    "hashtags": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "string",
+        "pattern": "^#[^\\s#]{2,30}$"
+      }
+    }
   }
 }

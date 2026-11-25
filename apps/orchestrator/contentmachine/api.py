@@ -108,6 +108,7 @@ _recent_subjects: list[str] = []   # titres déjà produits (en mémoire ; Postg
 
 def send_story_review(chat_id: int, subject: str | None) -> None:
     from .gemini import GeminiClient, GeminiError
+    from .images import DecorError, FalDecor
     from .pipeline import StoryTooLong, make_story
     from .scriptgen import caption as story_caption
     from .storyboard import StoryboardError
@@ -118,10 +119,16 @@ def send_story_review(chat_id: int, subject: str | None) -> None:
         return
     try:
         gem = GeminiClient()
-        result = None
-        for _ in range(2):                       # une réécriture si la voix dépasse 90 s
+        decor = None
+        if config.get("FAL_KEY"):
             try:
-                result = make_story(gem, gem, subject=subject, avoid=_recent_subjects)
+                decor = FalDecor()
+            except DecorError as exc:
+                log.warning("décors IA désactivés : %s", exc)
+        result = None
+        for _ in range(2):                       # une réécriture si la voix reste trop longue
+            try:
+                result = make_story(gem, gem, subject=subject, avoid=_recent_subjects, decor=decor)
                 break
             except StoryTooLong:
                 continue
@@ -134,7 +141,11 @@ def send_story_review(chat_id: int, subject: str | None) -> None:
                                          f"{result.qa.summary()}. Renvoie /histoire pour réessayer.")
             return
         review = store.create("stories", str(result.video), story_caption(sb))
-        text = f"📖 {sb['title']}\n\n{story_caption(sb)}\n\n✔️ Contrôle qualité : {result.qa.summary()}"
+        decors = (f"🎨 Décors IA : {result.decors}/{len(sb['scenes']) + 1} scènes, ~{result.cost_usd:.3f} $"
+                  if decor else "🎨 Décors dessinés en code (ajoute FAL_KEY dans Railway pour les décors IA)")
+        tempo = f"\n🎙️ Débit de la voix ajusté x{result.tempo:.2f}" if abs(result.tempo - 1) > 0.005 else ""
+        text = (f"📖 {sb['title']}\n\n{story_caption(sb)}\n\n✔️ Contrôle qualité : {result.qa.summary()}\n"
+                f"{decors}{tempo}")
         client.send_for_review(chat_id, result.video, review.id, text)
     except (GeminiError, StoryboardError, StoryTooLong, RenderError, QAError, TelegramError, OSError) as exc:
         log.error("histoire impossible : %s", exc)

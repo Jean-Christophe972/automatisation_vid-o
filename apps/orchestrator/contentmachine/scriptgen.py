@@ -23,9 +23,21 @@ CE QUI FAIT LE SUCCÈS DU FORMAT
 - Tutoie le spectateur (« tu »). Phrases courtes, rythme parlé, vocabulaire simple.
 - Fin : une question qui pousse à commenter (« Et toi, tu ferais quoi ? » ou plus original).
 
+- Ton léger, drôle et qui fait rêver : situations absurdes mais crédibles, petites chutes comiques.
+
+MISE EN SCÈNE : UNE PHRASE = UNE SCÈNE
+- Chaque scène est UNE phrase courte (6 à 18 mots) avec SA propre image : un nouveau lieu, une nouvelle \
+action ou un nouvel objet. Le spectateur doit voir littéralement ce que dit la voix.
+- Les personnages bougent : varie les poses, fais-les traverser l'écran avec "to_x" (marcher, courir), \
+réagir (surprised, celebrate, scared, angry, dance…). Évite deux scènes de suite avec la même pose.
+- "decor" décrit en ANGLAIS le décor dessiné derrière les personnages : un lieu précis et des objets \
+concrets liés à la phrase (ex. "a tiny apartment kitchen with a fridge full of gold coins, morning light"). \
+Jamais de personne, d'animal humanoïde, de texte, de logo ni de marque dans "decor".
+
 CONTRAINTES STRICTES
-- Narration totale (toutes les scènes + outro) : entre {min_words} et {max_words} mots.
-- 6 à 9 scènes. La 1re scène commence par lire le hook. Chaque scène : 15 à 35 mots de narration.
+- Narration totale (toutes les scènes + outro) : entre {min_words} et {max_words} mots. C'est impératif : \
+la vidéo doit durer moins de 90 secondes.
+- 10 à 14 scènes. La 1re scène commence par lire le hook.
 - 1 ou 2 personnages, dont le personnage principal « toi » (id "toi").
 - Rien de violent, sexuel, haineux, ni de conseil dangereux. Pas de vraie personne ni de marque.
 - Réponds UNIQUEMENT avec un objet JSON valide respectant ce format :
@@ -38,21 +50,25 @@ CONTRAINTES STRICTES
   "characters": [{{"id": "toi", "name": "Toi", "color": "#E4572E", "accessory": "none"}}],
   "scenes": [
     {{"id": 1, "label": "JOUR 1", "background": "room",
+      "decor": "a cozy bedroom with an unmade bed and a window showing a sunny city",
       "narration": "texte lu par la voix off",
-      "actors": [{{"character": "toi", "pose": "stand", "x": 0.5, "facing": "right", "bubble": "court (optionnel, max 40)"}}],
+      "actors": [{{"character": "toi", "pose": "walk", "x": 0.2, "to_x": 0.6, "facing": "right", "bubble": "court (optionnel, max 40)"}}],
       "props": ["money"]}}
   ],
   "outro": "Question finale pour les commentaires",
   "hashtags": ["#etsi", "#histoire"]
 }}
 
-Règles du format : "background" ∈ {{{backgrounds}}} ; "pose" ∈ {{{poses}}} ; "props" ⊂ {{{props}}} (0 à 3) ; \
-"x" entre 0.1 et 0.9 ; "accessory" ∈ {{none, cap, glasses, hat, tie, crown}} ; couleurs en #RRGGBB ; \
-"bubble" et "props" sont optionnels ; les ids de scènes vont de 1 à N sans trou.
+Règles du format : "background" ∈ {{{backgrounds}}} (style de secours et ambiance jour/nuit) ; \
+"pose" ∈ {{{poses}}} ; "props" ⊂ {{{props}}} (0 à 2, objets dessinés au premier plan) ; \
+"x" et "to_x" entre 0.1 et 0.9 ; "accessory" ∈ {{none, cap, glasses, hat, tie, crown}} ; couleurs en #RRGGBB ; \
+"label" court (max 24 caractères, peut se répéter d'une scène à l'autre) ; \
+"bubble", "to_x" et "props" sont optionnels ; les ids de scènes vont de 1 à N sans trou.
 {avoid}{feedback}"""
 
 BACKGROUNDS = ["room", "street", "office", "night_sky", "house_exterior", "city", "nature", "plain"]
-POSES = ["stand", "walk", "run", "point", "sit", "jump", "scared", "think", "wave", "celebrate", "sad", "shrug"]
+POSES = ["stand", "walk", "run", "point", "sit", "jump", "scared", "think", "wave", "celebrate", "sad", "shrug",
+         "dance", "talk", "surprised", "angry"]
 PROPS = ["money", "house", "car", "phone", "clock", "globe", "heart", "trophy", "question", "lightning", "tree", "door"]
 
 DEFAULT_SUBJECT = ("Choisis toi-même un sujet « Et si demain… » original, universel et très intrigant "
@@ -87,12 +103,17 @@ def _repair(sb: dict) -> dict:
         if isinstance(scene, dict):
             scene["id"] = i
             for a in scene.get("actors") or []:
-                if isinstance(a, dict) and isinstance(a.get("x"), (int, float)):
-                    a["x"] = min(0.9, max(0.1, float(a["x"])))
+                for key in ("x", "to_x"):
+                    if isinstance(a, dict) and isinstance(a.get(key), (int, float)):
+                        a[key] = min(0.9, max(0.1, float(a[key])))
                 if isinstance(a, dict) and isinstance(a.get("bubble"), str):
                     a["bubble"] = a["bubble"][:40]
                     if not a["bubble"].strip():
                         del a["bubble"]
+            if isinstance(scene.get("decor"), str):
+                scene["decor"] = scene["decor"].strip()[:300]
+                if len(scene["decor"]) < 10:
+                    del scene["decor"]
             if isinstance(scene.get("props"), list):
                 scene["props"] = [p for p in scene["props"] if p in PROPS][:3]
     return sb

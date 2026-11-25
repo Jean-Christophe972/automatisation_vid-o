@@ -2,7 +2,7 @@
 
 Production automatisée de vidéos courtes pour deux comptes (TikTok + YouTube Shorts), avec validation humaine avant chaque publication. Voir `CLAUDE.md` pour l'architecture et les règles.
 
-## État (v0.3)
+## État (v0.4)
 
 | Brique | État |
 | --- | --- |
@@ -14,6 +14,7 @@ Production automatisée de vidéos courtes pour deux comptes (TikTok + YouTube S
 | Bot Telegram de validation (`/start`, `/test`, boutons Publier / Jeter) | fait, testé (stockage en mémoire, Postgres à venir) |
 | Publisher YouTube / TikTok | à faire |
 | Générateur « Et si demain… » : scénario Gemini validé, voix Gemini TTS, rendu stickman animé, sous-titres mot à mot (`/histoire`) | fait, testé avec voix factice ; voix réelle à valider sur Railway |
+| v0.4 : une scène par phrase, décors dessinés par IA (fal, `FAL_KEY`, ~0,04 $ par vidéo), déplacements et 16 poses, débit de voix ajusté au lieu de rejeter | fait, testé avec décors factices ; décors réels à valider sur Railway |
 
 ## Déploiement Railway
 

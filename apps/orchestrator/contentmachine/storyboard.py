@@ -19,8 +19,9 @@ SCHEMA_PATH = Path(os.environ.get(
     Path(__file__).resolve().parents[3] / "packages" / "schemas" / "storyboard.json",
 ))
 
-# Rythme de lecture constaté en français : ~2,6 mots/s. Cible 62-85 s de voix.
-MIN_WORDS, MAX_WORDS = 165, 230
+# La voix Gemini « conteur » lit ~2 à 2,4 mots/s (mesuré le 25/11 : 165+ mots dépassaient 88 s).
+# Cible 130-185 mots ; pipeline.fit_tempo rattrape les petits écarts en ajustant le débit.
+MIN_WORDS, MAX_WORDS = 130, 185
 
 
 class StoryboardError(ValueError):
