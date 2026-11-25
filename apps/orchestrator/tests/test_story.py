@@ -182,3 +182,20 @@ def test_histoire_command_parses_subject(monkeypatch):
                json={"message": {"text": "/histoire et si les chats parlaient", "chat": {"id": int(CHAT)}}})
     assert calls == [(int(CHAT), "et si les chats parlaient")]
     assert fake.methods() == ["sendMessage"]
+
+
+def test_tts_sends_only_the_text():
+    """Régression 26/11 : aucune consigne ne doit être envoyée avec le texte (elle était lue à voix haute)."""
+    import httpx
+    from contentmachine.gemini import GeminiClient
+    sent = []
+
+    def handler(req):
+        sent.append(json.loads(req.content))
+        raise httpx.ConnectError("stop")
+
+    g = GeminiClient("k", httpx.Client(transport=httpx.MockTransport(handler)))
+    g.backoff = 0
+    with pytest.raises(Exception):
+        g.speak("Bonjour à toi.", Path("/tmp/x.wav"))
+    assert sent and all(b["contents"][0]["parts"][0]["text"] == "Bonjour à toi." for b in sent)

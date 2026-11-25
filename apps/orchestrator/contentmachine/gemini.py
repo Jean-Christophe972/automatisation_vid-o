@@ -42,8 +42,8 @@ def tts_voice() -> str:
     return config.get("GEMINI_TTS_VOICE") or "Charon"
 
 
-TTS_STYLE = ("Lis ce texte en français, comme un conteur captivant sur TikTok : "
-             "rythme vif, ton intrigué et complice, sans exagérer. Texte : ")
+# Pas de consigne de style ajoutée au texte : le modèle de voix la lisait parfois à voix haute
+# (constaté le 26/11, « des parties du prompt » entendues dans la vidéo). On n'envoie que le texte à dire.
 
 
 class GeminiClient:
@@ -105,7 +105,7 @@ class GeminiClient:
         for model in tts_models():
             try:
                 data = self._post(model, {
-                    "contents": [{"role": "user", "parts": [{"text": TTS_STYLE + text}]}],
+                    "contents": [{"role": "user", "parts": [{"text": text}]}],
                     "generationConfig": {
                         "responseModalities": ["AUDIO"],
                         "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": tts_voice()}}},
