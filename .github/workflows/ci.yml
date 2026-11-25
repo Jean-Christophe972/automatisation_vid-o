@@ -29,3 +29,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: L'image Railway se construit
         run: docker build -t contentmachine .
+      - name: L'image contient tout ce qu'il faut pour rendre une histoire
+        run: |
+          docker run --rm contentmachine python -c "
+          import shutil; from pathlib import Path
+          from contentmachine import storyboard, render, whitelist
+          storyboard._validator(); whitelist.load()
+          assert shutil.which('ffmpeg'), 'ffmpeg absent'
+          assert any(p and Path(p).is_file() for p in render.FONT_PATHS), 'police absente'
+          print('image OK')"

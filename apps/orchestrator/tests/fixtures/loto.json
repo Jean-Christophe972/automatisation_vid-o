@@ -1,0 +1,38 @@
+{
+  "story_id": "et-si-tu-gagnais-100-millions",
+  "title": "Et si tu gagnais 100 millions au loto ?",
+  "language": "fr",
+  "hook": "Et si demain tu gagnais 100 millions au loto ?",
+  "characters": [
+    {"id": "toi", "name": "Toi", "color": "#E4572E", "accessory": "none"},
+    {"id": "banquier", "name": "Le banquier", "color": "#4C9BE8", "accessory": "tie"}
+  ],
+  "scenes": [
+    {"id": 1, "label": "JOUR 1", "background": "room",
+     "narration": "Et si demain tu gagnais cent millions au loto ? Tu vérifies les numéros dix fois. Puis vingt. Ton cœur bat tellement fort que tu entends plus rien.",
+     "actors": [{"character": "toi", "pose": "scared", "x": 0.5, "bubble": "C'est pas possible…"}],
+     "props": ["money", "question"]},
+    {"id": 2, "label": "JOUR 2", "background": "office",
+     "narration": "Le lendemain, un banquier en costume t'attend avec un café. Il t'appelle par ton prénom. Hier encore, il refusait ton découvert.",
+     "actors": [{"character": "banquier", "pose": "wave", "x": 0.65, "facing": "left"}, {"character": "toi", "pose": "think", "x": 0.3}],
+     "props": ["clock"]},
+    {"id": 3, "label": "1 SEMAINE APRÈS", "background": "street",
+     "narration": "Une semaine plus tard, ton téléphone explose. Des cousins dont tu ignorais l'existence te souhaitent un joyeux anniversaire. Ton anniversaire, c'est en mars.",
+     "actors": [{"character": "toi", "pose": "run", "x": 0.4}],
+     "props": ["phone", "lightning"]},
+    {"id": 4, "label": "1 MOIS APRÈS", "background": "house_exterior",
+     "narration": "Un mois après, tu achètes la maison de tes rêves. Douze chambres. Le problème ? Tu dors toujours dans la même, et tu te perds en cherchant la cuisine.",
+     "actors": [{"character": "toi", "pose": "celebrate", "x": 0.3}],
+     "props": ["house", "car"]},
+    {"id": 5, "label": "6 MOIS APRÈS", "background": "night_sky",
+     "narration": "Six mois après, tu as tout testé. Le jet privé, les restaurants étoilés, les voyages au bout du monde. Mais un soir, tu réalises que tu t'ennuies.",
+     "actors": [{"character": "toi", "pose": "sad", "x": 0.5}],
+     "props": ["globe"]},
+    {"id": 6, "label": "1 AN APRÈS", "background": "city",
+     "narration": "Un an après, tu reprends un petit boulot. Juste pour voir des gens. Ton chef ne sait pas que tu pourrais racheter l'entreprise entière avant midi.",
+     "actors": [{"character": "toi", "pose": "walk", "x": 0.35}, {"character": "banquier", "pose": "point", "x": 0.75, "facing": "left", "bubble": "T'es en retard !"}],
+     "props": ["trophy"]}
+  ],
+  "outro": "Et toi, avec cent millions, tu arrêterais de travailler dès le lendemain ? Dis-le en commentaire.",
+  "hashtags": ["#etsi", "#etsidemain", "#loto", "#histoire"]
+}

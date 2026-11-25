@@ -4,10 +4,11 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    WHITELIST_PATH=/app/config/sources_whitelist.yaml
+    WHITELIST_PATH=/app/config/sources_whitelist.yaml \
+    STORYBOARD_SCHEMA_PATH=/app/packages/schemas/storyboard.json
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ffmpeg \
+    && apt-get install -y --no-install-recommends ffmpeg fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -15,6 +16,7 @@ COPY apps/orchestrator/pyproject.toml apps/orchestrator/
 COPY apps/orchestrator/contentmachine apps/orchestrator/contentmachine
 RUN pip install ./apps/orchestrator
 COPY config config
+COPY packages packages
 
 RUN useradd --create-home app
 USER app

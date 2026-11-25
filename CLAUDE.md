@@ -12,8 +12,8 @@ Deux comptes (TikTok + YouTube Shorts chacun), production automatisée, validati
 - Secrets uniquement en variables d'environnement Railway, jamais dans le repo.
 
 ## Stack
-- Monorepo : apps/orchestrator (Python FastAPI + APScheduler), apps/clipper (Python, ffmpeg),
-  apps/stories (Node + Remotion), apps/publisher (Python), apps/bot (Telegram).
+- Monorepo : apps/orchestrator (Python FastAPI : bot Telegram, stories, QA), apps/clipper (Python, ffmpeg),
+  apps/publisher (Python).
 - Postgres (jobs, vidéos, stats) + Redis (file de tâches) sur Railway ; stockage Cloudflare R2.
 - LLM : modèles open source via OpenRouter/Groq (variable LLM_MODEL). Whisper : API Groq.
 - TTS : Gemini 3.8 Flash TTS (API Gemini), validé à l'écoute. Kokoro écarté (trop robotique en FR).
@@ -25,11 +25,12 @@ Sources : campagnes gaming (Call of Duty FR d'abord, GTA 6 dès ouverture) — t
 Étapes : ingest (yt-dlp) -> transcribe -> highlights (volume + scènes + score LLM)
 -> layout facecam/gameplay 9:16 -> sous-titres + hook -> review Telegram -> publish -> submit Whop.
 
-## Stories (compte A)
-Base : remotion-dev/template-prompt-to-video + morceaux de gyoridavid/short-video-maker.
-Étapes : pitchs -> scénario en parties -> storyboard JSON (scènes, poses, bulles, durées)
--> voix Gemini TTS -> rendu Remotion avec bibliothèque de poses stickman SVG -> sous-titres Whisper -> review.
-Le schéma du storyboard est dans packages/schemas/storyboard.json (à créer en premier).
+## Stories (compte A) — format « Et si demain… »
+Décision (25/11) : rendu en Python/Pillow dans l'orchestrateur plutôt que Remotion (une seule image Docker,
+rendu testable en CI, pas de navigateur headless). Code : contentmachine/{scriptgen,gemini,render,pipeline}.py.
+Étapes : sujet -> scénario Gemini (storyboard JSON validé par packages/schemas/storyboard.json, relance avec
+les erreurs) -> voix Gemini TTS par scène -> rendu stickman animé, sous-titres calés sur la durée de chaque voix
+-> contrôle qualité profil "story" (61-90 s) -> validation Telegram (/histoire [sujet]).
 
 ## Publisher
 - YouTube Data API v3 (OAuth par chaîne).
@@ -39,4 +40,4 @@ Le schéma du storyboard est dans packages/schemas/storyboard.json (à créer en
 Cron nocturne : stats par vidéo -> table metrics -> top 10 injectés comme exemples dans les prompts.
 
 ## Ordre de travail
-1. Clipper v1 en prod avant le 19/11. 2. Publisher + bot. 3. Stories v1. 4. Métriques.
+Priorité (24/11) : compte A stories d'abord, clips GTA ensuite. 1. Stories v1 (fait). 2. Postgres. 3. Publisher. 4. Clipper. 5. Métriques.

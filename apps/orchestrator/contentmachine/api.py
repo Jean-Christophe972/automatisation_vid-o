@@ -4,6 +4,7 @@ v0.2 : état du service + circuit de validation Telegram.
 Commandes du bot (uniquement depuis TELEGRAM_CHAT_ID) :
   /start  vérifie la configuration
   /test   envoie une vidéo d'essai passée au contrôle qualité, avec les boutons
+  /histoire [sujet]  écrit, met en voix et dessine une vidéo « Et si demain… »
 """
 from __future__ import annotations
 
@@ -102,6 +103,47 @@ def send_test_review(chat_id: int) -> None:
             pass
 
 
+_recent_subjects: list[str] = []   # titres déjà produits (en mémoire ; Postgres à venir)
+
+
+def send_story_review(chat_id: int, subject: str | None) -> None:
+    from .gemini import GeminiClient, GeminiError
+    from .pipeline import StoryTooLong, make_story
+    from .scriptgen import caption as story_caption
+    from .storyboard import StoryboardError
+    from .render import RenderError
+
+    client = telegram()
+    if client is None:
+        return
+    try:
+        gem = GeminiClient()
+        result = None
+        for _ in range(2):                       # une réécriture si la voix dépasse 90 s
+            try:
+                result = make_story(gem, gem, subject=subject, avoid=_recent_subjects)
+                break
+            except StoryTooLong:
+                continue
+        if result is None:
+            raise StoryTooLong("histoire trop longue deux fois de suite")
+        sb = result.storyboard
+        _recent_subjects.append(sb["title"])
+        if not result.qa.passed:
+            client.send_message(chat_id, f"⚠️ Vidéo « {sb['title']} » écartée par le contrôle qualité : "
+                                         f"{result.qa.summary()}. Renvoie /histoire pour réessayer.")
+            return
+        review = store.create("stories", str(result.video), story_caption(sb))
+        text = f"📖 {sb['title']}\n\n{story_caption(sb)}\n\n✔️ Contrôle qualité : {result.qa.summary()}"
+        client.send_for_review(chat_id, result.video, review.id, text)
+    except (GeminiError, StoryboardError, StoryTooLong, RenderError, QAError, TelegramError, OSError) as exc:
+        log.error("histoire impossible : %s", exc)
+        try:
+            client.send_message(chat_id, f"⚠️ Histoire impossible : {str(exc)[:500]}")
+        except TelegramError:
+            pass
+
+
 def handle_command(cmd: Command, background: BackgroundTasks) -> None:
     client = telegram()
     if client is None:
@@ -113,11 +155,18 @@ def handle_command(cmd: Command, background: BackgroundTasks) -> None:
                                              "Mets-le dans la variable Railway TELEGRAM_CHAT_ID.")
         return
     if cmd.name == "start":
-        client.send_message(cmd.chat_id, "✅ Bot configuré. Tu recevras ici chaque vidéo à valider. "
-                                         "Envoie /test pour recevoir une vidéo d'essai.")
+        client.send_message(cmd.chat_id, "✅ Bot configuré. Tu recevras ici chaque vidéo à valider.\n"
+                                         "/histoire : une vidéo « Et si demain… » sur un sujet choisi par l'IA\n"
+                                         "/histoire et si tu gagnais au loto : sur ton sujet\n"
+                                         "/test : vidéo d'essai technique")
     elif cmd.name == "test":
         client.send_message(cmd.chat_id, "Je génère une vidéo d'essai, environ 20 secondes…")
         background.add_task(send_test_review, cmd.chat_id)
+    elif cmd.name == "histoire":
+        subject = cmd.args.strip() or None
+        client.send_message(cmd.chat_id, "✍️ J'écris l'histoire" + (f" « {subject} »" if subject else "")
+                            + ", puis voix et dessin : compte 3 à 5 minutes…")
+        background.add_task(send_story_review, cmd.chat_id, subject)
 
 
 def handle_decision(d: Decision) -> None:

@@ -49,9 +49,10 @@ class Decision:
 
 @dataclass(frozen=True)
 class Command:
-    name: str              # "start", "test"...
+    name: str              # "start", "test", "histoire"...
     chat_id: int
     authorized: bool
+    args: str = ""
 
 
 class TelegramClient:
@@ -128,6 +129,8 @@ def parse_update(update: dict, allowed_chat_id: str | None) -> Decision | Comman
         chat_id = (msg.get("chat") or {}).get("id")
         if chat_id is None:
             return None
-        name = msg["text"][1:].split()[0].split("@")[0].lower()
-        return Command(name=name, chat_id=int(chat_id), authorized=bool(allowed) and str(chat_id) == allowed)
+        head, _, rest = msg["text"][1:].partition(" ")
+        name = head.split("@")[0].lower()
+        return Command(name=name, chat_id=int(chat_id), authorized=bool(allowed) and str(chat_id) == allowed,
+                       args=rest.strip()[:200])
     return None

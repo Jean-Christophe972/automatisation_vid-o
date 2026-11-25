@@ -2,7 +2,7 @@
 
 Production automatisée de vidéos courtes pour deux comptes (TikTok + YouTube Shorts), avec validation humaine avant chaque publication. Voir `CLAUDE.md` pour l'architecture et les règles.
 
-## État (v0.2)
+## État (v0.3)
 
 | Brique | État |
 | --- | --- |
@@ -13,7 +13,7 @@ Production automatisée de vidéos courtes pour deux comptes (TikTok + YouTube S
 | Clipper (fork OpenShorts) | à faire |
 | Bot Telegram de validation (`/start`, `/test`, boutons Publier / Jeter) | fait, testé (stockage en mémoire, Postgres à venir) |
 | Publisher YouTube / TikTok | à faire |
-| Rendu stickman (Remotion) + voix Gemini TTS | à faire |
+| Générateur « Et si demain… » : scénario Gemini validé, voix Gemini TTS, rendu stickman animé, sous-titres mot à mot (`/histoire`) | fait, testé avec voix factice ; voix réelle à valider sur Railway |
 
 ## Déploiement Railway
 
