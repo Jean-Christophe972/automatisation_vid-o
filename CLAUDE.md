@@ -25,14 +25,16 @@ Sources : campagnes gaming (Call of Duty FR d'abord, GTA 6 dès ouverture) — t
 Étapes : ingest (yt-dlp) -> transcribe -> highlights (volume + scènes + score LLM)
 -> layout facecam/gameplay 9:16 -> sous-titres + hook -> review Telegram -> publish -> submit Whop.
 
-## Stories (compte A) — format « Et si demain… »
-Décision (25/11) : rendu en Python/Pillow dans l'orchestrateur plutôt que Remotion (une seule image Docker,
-rendu testable en CI, pas de navigateur headless). Code : contentmachine/{scriptgen,gemini,render,pipeline}.py.
-Étapes : sujet -> scénario Gemini (storyboard JSON validé par packages/schemas/storyboard.json, relance avec
-les erreurs) -> voix Gemini TTS par scène (débit ajusté x0,92-1,22 pour tenir 61-90 s) -> décors IA fal FLUX schnell
-(une scène = une phrase, champ "decor", repli sur décor dessiné en code) -> stickmen animés par notre moteur
-par-dessus (déplacements to_x, 16 poses), sous-titres calés sur la durée de chaque voix
--> contrôle qualité profil "story" (61-90 s) -> validation Telegram (/histoire [sujet]).
+## Stories (compte A) — format « Et si demain… » en 2 parties, dessin animé (v0.5, 26/11)
+DA validée le 26/11 : « style C » (cartoon coloré, stickmen à grosse tête ronde, mascotte casquette orange).
+Code : contentmachine/{story2,fal,cartoon}.py (l'ancien rendu Pillow render/pipeline reste pour mémoire).
+Étapes : sujet -> histoire orale complète en 2 parties (Gemini, partie 1 finit sur un suspense, partie 2
+commence par un rappel) -> découpage en 8-16 plans mot pour mot vérifié + description image/mouvement
+-> voix Gemini TTS d'un seul bloc par partie (débit ajusté pour 61-90 s), coupes calées sur les pauses
+-> image par plan FLUX.2 klein 4B (fal, ~0,003 $) -> animation LTX-2.3 distilled (fal, ~0,09 $ / 5 s,
+plafond MAX_COST_PER_PART, repli zoom lent) -> sous-titres mot à mot + bandeaux PARTIE 1/2
+-> contrôle qualité profil "story" -> validation Telegram des 2 parties (/histoire [sujet], /voix).
+Jamais de consigne de style envoyée à la voix (elle la lisait à voix haute).
 
 ## Publisher
 - YouTube Data API v3 (OAuth par chaîne).

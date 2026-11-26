@@ -32,6 +32,16 @@ def text_model() -> str:
     return config.get("GEMINI_TEXT_MODEL") or "gemini-3.5-flash"
 
 
+def text_models() -> list[str]:
+    """Modèle principal puis modèles de secours si Google répond « surchargé » (constaté le 25/11)."""
+    out = []
+    for m in [text_model(), *(config.get("GEMINI_TEXT_FALLBACKS") or "gemini-3.5-pro,gemini-2.5-flash").split(",")]:
+        m = m.strip()
+        if m and m not in out:
+            out.append(m)
+    return out
+
+
 def tts_models() -> list[str]:
     primary = config.get("GEMINI_TTS_MODEL") or "gemini-3.8-flash-tts"
     fallback = "gemini-2.5-flash-preview-tts"
@@ -88,10 +98,18 @@ class GeminiClient:
             raise GeminiError(f"réponse inexploitable ({reason})") from exc
 
     def generate_json(self, prompt: str, temperature: float = 1.0) -> dict:
-        data = self._post(text_model(), {
-            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": temperature, "responseMimeType": "application/json"},
-        })
+        body = {"contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                "generationConfig": {"temperature": temperature, "responseMimeType": "application/json"}}
+        data, last = None, None
+        for i, model in enumerate(text_models()):
+            try:
+                data = self._post(model, body, retries=2 if i == 0 else 1)
+                break
+            except GeminiError as exc:
+                log.warning("texte : %s, modèle suivant", exc)
+                last = exc
+        if data is None:
+            raise GeminiError(f"aucun modèle de texte n'a répondu ({last})")
         text = "".join(p.get("text", "") for p in self._parts(data)).strip()
         text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text)
         try:
@@ -99,7 +117,7 @@ class GeminiClient:
         except json.JSONDecodeError as exc:
             raise GeminiError(f"JSON invalide renvoyé par le modèle : {exc}") from exc
 
-    def speak(self, text: str, out_wav: Path) -> Path:
+    def speak(self, text: str, out_wav: Path, voice: str | None = None) -> Path:
         """Synthèse vocale d'un passage ; écrit un WAV 48 kHz mono."""
         last: Exception | None = None
         for model in tts_models():
@@ -108,7 +126,7 @@ class GeminiClient:
                     "contents": [{"role": "user", "parts": [{"text": text}]}],
                     "generationConfig": {
                         "responseModalities": ["AUDIO"],
-                        "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": tts_voice()}}},
+                        "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": voice or tts_voice()}}},
                     },
                 })
                 inline = next((p["inlineData"] for p in self._parts(data) if "inlineData" in p), None)

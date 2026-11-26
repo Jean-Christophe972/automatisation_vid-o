@@ -176,12 +176,17 @@ def test_histoire_command_parses_subject(monkeypatch):
     monkeypatch.setenv("TELEGRAM_CHAT_ID", CHAT)
     monkeypatch.delenv("RAILWAY_PUBLIC_DOMAIN", raising=False)
     monkeypatch.setattr(api, "_client", fake.client())
-    monkeypatch.setattr(api, "send_story_review", lambda chat, subject: calls.append((chat, subject)))
+    monkeypatch.setattr(api, "send_cartoon_review", lambda chat, subject: calls.append((chat, subject)))
+    hook = {"X-Telegram-Bot-Api-Secret-Token": webhook_secret(TOKEN)}
+    msg = {"message": {"text": "/histoire et si les chats parlaient", "chat": {"id": int(CHAT)}}}
+    monkeypatch.delenv("FAL_KEY", raising=False)
     with TestClient(api.app) as c:
-        c.post("/telegram/webhook", headers={"X-Telegram-Bot-Api-Secret-Token": webhook_secret(TOKEN)},
-               json={"message": {"text": "/histoire et si les chats parlaient", "chat": {"id": int(CHAT)}}})
+        c.post("/telegram/webhook", headers=hook, json=msg)          # sans FAL_KEY : message d'erreur clair
+        assert calls == [] and fake.methods() == ["sendMessage"]
+        monkeypatch.setenv("FAL_KEY", "k")
+        c.post("/telegram/webhook", headers=hook, json=msg)
     assert calls == [(int(CHAT), "et si les chats parlaient")]
-    assert fake.methods() == ["sendMessage"]
+    assert fake.methods() == ["sendMessage", "sendMessage"]
 
 
 def test_tts_sends_only_the_text():

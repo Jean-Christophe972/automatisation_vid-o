@@ -92,6 +92,13 @@ class TelegramClient:
             }, files={"video": (Path(video).name, fh, "video/mp4")})
         return int(result["message_id"])
 
+    def send_voice(self, chat_id: int | str, audio: Path, caption: str) -> int:
+        """Envoie un extrait audio (OGG Opus) lisible directement dans Telegram."""
+        with Path(audio).open("rb") as fh:
+            result = self._call("sendVoice", data={"chat_id": str(chat_id), "caption": caption[:1000]},
+                                files={"voice": (Path(audio).name, fh, "audio/ogg")})
+        return int(result["message_id"])
+
     def confirm(self, chat_id: int | str, decision: Decision, label: str) -> None:
         """Répond au clic et remplace les boutons par le verdict (évite un double clic)."""
         self._call("answerCallbackQuery", json={"callback_query_id": decision.callback_id, "text": label})
