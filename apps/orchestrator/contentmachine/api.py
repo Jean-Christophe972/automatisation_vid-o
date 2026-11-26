@@ -208,13 +208,16 @@ def send_cartoon_review(chat_id: int, subject: str | None) -> None:
         client.send_message(chat_id, "⏳ Une histoire est déjà en cours de fabrication, attends qu'elle arrive.")
         return
     try:
+        from .elevenlabs import ElevenLabsVoice, enabled as eleven_enabled
+
         gem, fal = GeminiClient(), FalClient()
+        voice = ElevenLabsVoice(fallback=gem) if eleven_enabled() else gem
         result = None
         for _ in range(2):                       # une réécriture si une voix reste trop longue
             try:
                 # dossier conservé : les vidéos validées serviront à la publication
                 tmp = tempfile.mkdtemp(prefix="cm-story-")
-                result = make_two_parts(gem, gem, fal, subject, avoid=_recent_subjects, out_dir=Path(tmp))
+                result = make_two_parts(gem, voice, fal, subject, avoid=_recent_subjects, out_dir=Path(tmp))
                 st = result.story
                 _recent_subjects.append(st["title"])
                 client.send_message(chat_id, f"📖 {st['title']}\n\n— PARTIE 1 —\n{st['part1']}\n\n"

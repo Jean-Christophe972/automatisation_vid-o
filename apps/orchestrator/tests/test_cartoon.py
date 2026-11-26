@@ -234,3 +234,39 @@ def test_overlay_draws_hook_and_part_banner():
     b = Image.new("RGB", (720, 1280), (90, 160, 220))
     ov.draw(b, 40.0)
     assert a.tobytes() != b.tobytes()                 # hook visible au début seulement
+
+
+# --- ElevenLabs -------------------------------------------------------------------------
+
+def _mp3(tmp_path):
+    out = tmp_path / "s.mp3"
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "sine=d=1", str(out)], check=True)
+    return out.read_bytes()
+
+
+def test_elevenlabs_speaks_and_converts(tmp_path):
+    from contentmachine.elevenlabs import ElevenLabsVoice
+    data = _mp3(tmp_path)
+
+    def handler(req):
+        assert req.headers["xi-api-key"] == "e-key" and req.url.path.endswith("/voice123")
+        assert json.loads(req.content)["text"] == "Bonjour."
+        return httpx.Response(200, content=data)
+
+    v = ElevenLabsVoice("e-key", "voice123", httpx.Client(transport=httpx.MockTransport(handler)))
+    wav = v.speak("Bonjour.", tmp_path / "v.wav")
+    from contentmachine.render import wav_duration
+    assert wav.suffix == ".wav" and wav_duration(wav) == pytest.approx(1.0, abs=0.1)
+
+
+def test_elevenlabs_falls_back_without_leaking_key(tmp_path):
+    from contentmachine.elevenlabs import ElevenLabsVoice
+    v = ElevenLabsVoice("e-key", "v", httpx.Client(transport=httpx.MockTransport(lambda r: httpx.Response(401))),
+                        fallback=FakeVoice())
+    v.backoff = 0
+    assert v.speak("un deux trois", tmp_path / "f.wav").is_file()
+    v.fallback = None
+    from contentmachine.elevenlabs import ElevenLabsError
+    with pytest.raises(ElevenLabsError) as exc:
+        v.speak("x", tmp_path / "g.wav")
+    assert "e-key" not in str(exc.value)

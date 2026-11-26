@@ -13,6 +13,8 @@ VARIABLES = {
     "TELEGRAM_BOT_TOKEN": {"required": False, "usage": "validation des vidéos"},
     "TELEGRAM_CHAT_ID": {"required": False, "usage": "destinataire des aperçus"},
     "FAL_KEY": {"required": False, "usage": "décors dessinés par IA (stories) ; sans elle, décors dessinés en code"},
+    "ELEVENLABS_API_KEY": {"required": False, "usage": "voix ElevenLabs (sinon voix Gemini)"},
+    "ELEVENLABS_VOICE_ID": {"required": False, "usage": "identifiant de la voix ElevenLabs choisie"},
     "GROQ_API_KEY": {"required": False, "usage": "transcription Whisper"},
     "OPENROUTER_API_KEY": {"required": False, "usage": "LLM open source (scénarios)"},
     "DATABASE_URL": {"required": False, "usage": "Postgres Railway"},

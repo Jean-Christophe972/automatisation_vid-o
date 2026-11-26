@@ -30,7 +30,7 @@ DA validée le 26/11 : « style C » (cartoon coloré, stickmen à grosse tête 
 Code : contentmachine/{story2,fal,cartoon}.py (l'ancien rendu Pillow render/pipeline reste pour mémoire).
 Étapes : sujet -> histoire orale complète en 2 parties (Gemini, partie 1 finit sur un suspense, partie 2
 commence par un rappel) -> découpage en 8-16 plans mot pour mot vérifié + description image/mouvement
--> voix Gemini TTS d'un seul bloc par partie (débit ajusté pour 61-90 s), coupes calées sur les pauses
+-> voix ElevenLabs (si ELEVENLABS_API_KEY + ELEVENLABS_VOICE_ID, Gemini en secours) d'un seul bloc par partie (débit ajusté pour 61-90 s), coupes calées sur les pauses
 -> image par plan FLUX.2 klein 4B (fal, ~0,003 $) -> animation LTX-2.3 distilled (fal, ~0,09 $ / 5 s,
 plafond MAX_COST_PER_PART, repli zoom lent) -> sous-titres mot à mot + bandeaux PARTIE 1/2
 -> contrôle qualité profil "story" -> validation Telegram des 2 parties (/histoire [sujet], /voix).

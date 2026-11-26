@@ -35,7 +35,7 @@ def text_model() -> str:
 def text_models() -> list[str]:
     """Modèle principal puis modèles de secours si Google répond « surchargé » (constaté le 25/11)."""
     out = []
-    for m in [text_model(), *(config.get("GEMINI_TEXT_FALLBACKS") or "gemini-3.5-pro,gemini-2.5-flash").split(",")]:
+    for m in [text_model(), *(config.get("GEMINI_TEXT_FALLBACKS") or "gemini-3.8-flash,gemini-3.5-pro").split(",")]:
         m = m.strip()
         if m and m not in out:
             out.append(m)
@@ -100,16 +100,16 @@ class GeminiClient:
     def generate_json(self, prompt: str, temperature: float = 1.0) -> dict:
         body = {"contents": [{"role": "user", "parts": [{"text": prompt}]}],
                 "generationConfig": {"temperature": temperature, "responseMimeType": "application/json"}}
-        data, last = None, None
+        data, errors = None, []
         for i, model in enumerate(text_models()):
             try:
                 data = self._post(model, body, retries=2 if i == 0 else 1)
                 break
             except GeminiError as exc:
                 log.warning("texte : %s, modèle suivant", exc)
-                last = exc
+                errors.append(str(exc)[:160])
         if data is None:
-            raise GeminiError(f"aucun modèle de texte n'a répondu ({last})")
+            raise GeminiError("aucun modèle de texte n'a répondu : " + " | ".join(errors))
         text = "".join(p.get("text", "") for p in self._parts(data)).strip()
         text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text)
         try:
